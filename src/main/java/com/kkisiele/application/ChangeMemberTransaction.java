@@ -1,27 +1,24 @@
 package com.kkisiele.application;
 
-import com.kkisiele.domain.Affiliation;
 import com.kkisiele.domain.Employee;
 import com.kkisiele.domain.UnionAffiliation;
-import com.kkisiele.infrastructure.PayrollDatabase;
+import com.kkisiele.infrastructure.InMemoryDatabase;
 
-public class ChangeMemberTransaction extends ChangeAffiliationTransaction {
+public class ChangeMemberTransaction implements Transaction {
+    private final int empId;
     private final int memberId;
     private final double dues;
 
     public ChangeMemberTransaction(int empId, int memberId, double dues) {
-        super(empId);
+        this.empId = empId;
         this.memberId = memberId;
         this.dues = dues;
     }
 
     @Override
-    protected void recordMembership(Employee e) {
-        PayrollDatabase.addUnionMember(memberId, e);
-    }
-
-    @Override
-    protected Affiliation getAffiliation() {
-        return new UnionAffiliation(memberId, dues);
+    public void execute() {
+        Employee employee = InMemoryDatabase.getEmployee(empId);
+        InMemoryDatabase.addUnionMember(memberId, employee);
+        employee.setAffiliation(new UnionAffiliation(memberId, dues));
     }
 }

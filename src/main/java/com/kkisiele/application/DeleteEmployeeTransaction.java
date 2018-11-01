@@ -1,6 +1,6 @@
 package com.kkisiele.application;
 
-import com.kkisiele.infrastructure.PayrollDatabase;
+import com.kkisiele.infrastructure.InMemoryDatabase;
 
 public class DeleteEmployeeTransaction implements Transaction {
     private final int id;
@@ -11,6 +11,6 @@ public class DeleteEmployeeTransaction implements Transaction {
 
     @Override
     public void execute() {
-        PayrollDatabase.deleteEmployee(id);
+        InMemoryDatabase.deleteEmployee(id);
     }
 }

@@ -3,7 +3,7 @@ package com.kkisiele.application;
 import com.kkisiele.domain.Employee;
 import com.kkisiele.domain.ServiceCharge;
 import com.kkisiele.domain.UnionAffiliation;
-import com.kkisiele.infrastructure.PayrollDatabase;
+import com.kkisiele.infrastructure.InMemoryDatabase;
 
 import java.time.LocalDate;
 
@@ -20,7 +20,7 @@ public class ServiceChargeTransaction implements Transaction {
 
     @Override
     public void execute() {
-        Employee e = PayrollDatabase.getUnionMember(memberId);
+        Employee e = InMemoryDatabase.getUnionMember(memberId);
         if(e != null) {
             UnionAffiliation ua = null;
             if(e.affiliation() instanceof UnionAffiliation) {

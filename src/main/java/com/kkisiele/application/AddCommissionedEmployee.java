@@ -1,27 +1,27 @@
 package com.kkisiele.application;
 
-import com.kkisiele.domain.BiWeeklySchedule;
-import com.kkisiele.domain.CommissionClassification;
-import com.kkisiele.domain.PaymentClassification;
-import com.kkisiele.domain.PaymentSchedule;
+import com.kkisiele.domain.*;
+import com.kkisiele.infrastructure.InMemoryDatabase;
 
-public class AddCommissionedEmployee extends AddEmployeeTransaction {
+public class AddCommissionedEmployee implements Transaction {
+    private final int empId;
+    private final String name;
+    private final String address;
     private final double baseSalary;
     private final double commissionRate;
 
     public AddCommissionedEmployee(int empId, String name, String address, double baseSalary, double commissionRate) {
-        super(empId, name, address);
+        this.empId = empId;
+        this.name = name;
+        this.address = address;
         this.baseSalary = baseSalary;
         this.commissionRate = commissionRate;
     }
 
     @Override
-    protected PaymentClassification makeClassification() {
-        return new CommissionClassification(baseSalary, commissionRate);
-    }
-
-    @Override
-    protected PaymentSchedule makeSchedule() {
-        return new BiWeeklySchedule();
+    public void execute() {
+        EmployeeFactory factory = new EmployeeFactory();
+        Employee employee = factory.createCommissionedEmployee(empId, name, address, baseSalary, commissionRate);
+        InMemoryDatabase.addEmployee(empId, employee);
     }
 }

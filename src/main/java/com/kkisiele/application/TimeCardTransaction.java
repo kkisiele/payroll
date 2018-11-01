@@ -3,7 +3,7 @@ package com.kkisiele.application;
 import com.kkisiele.domain.Employee;
 import com.kkisiele.domain.HourlyClassification;
 import com.kkisiele.domain.TimeCard;
-import com.kkisiele.infrastructure.PayrollDatabase;
+import com.kkisiele.infrastructure.InMemoryDatabase;
 
 import java.time.LocalDate;
 
@@ -20,7 +20,7 @@ public class TimeCardTransaction implements Transaction {
 
     @Override
     public void execute() {
-        Employee employee = PayrollDatabase.getEmployee(empId);
+        Employee employee = InMemoryDatabase.getEmployee(empId);
         if(employee != null) {
             if (employee.classification() instanceof HourlyClassification) {
                 HourlyClassification classification = (HourlyClassification) employee.classification();

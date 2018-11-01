@@ -1,7 +1,7 @@
 package com.kkisiele;
 
 import com.kkisiele.domain.*;
-import com.kkisiele.infrastructure.PayrollDatabase;
+import com.kkisiele.infrastructure.InMemoryDatabase;
 import org.junit.Assert;
 import org.junit.Test;
 import com.kkisiele.application.*;
@@ -15,7 +15,7 @@ public class PayrollTest {
         AddSalariedEmployee t = new AddSalariedEmployee(empId, "Bob", "Home", 1000.00);
         t.execute();
 
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         Assert.assertEquals("Bob", e.name());
 
         PaymentClassification pc = e.classification();
@@ -34,7 +34,7 @@ public class PayrollTest {
         AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bob", "Home", 10.00);
         t.execute();
 
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         Assert.assertEquals("Bob", e.name());
 
         PaymentClassification pc = e.classification();
@@ -53,7 +53,7 @@ public class PayrollTest {
         AddCommissionedEmployee t = new AddCommissionedEmployee(empId, "Bob", "Home", 1200, 20);
         t.execute();
 
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         Assert.assertEquals("Bob", e.name());
 
         PaymentClassification pc = e.classification();
@@ -73,11 +73,11 @@ public class PayrollTest {
         AddCommissionedEmployee t = new AddCommissionedEmployee(empId, "Bill", "Home", 2500, 3);
         t.execute();
 
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         Assert.assertNotNull(e);
         DeleteEmployeeTransaction dt = new DeleteEmployeeTransaction(empId);
         dt.execute();
-        e = PayrollDatabase.getEmployee(empId);
+        e = InMemoryDatabase.getEmployee(empId);
         Assert.assertNull(e);
     }
 
@@ -89,7 +89,7 @@ public class PayrollTest {
         TimeCardTransaction tct = new TimeCardTransaction(LocalDate.of(2005, 7, 31), 8.0, empId);
         tct.execute();
 
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         Assert.assertNotNull(e);
 
         PaymentClassification pc = e.classification();
@@ -105,13 +105,13 @@ public class PayrollTest {
         int empId = 2;
         AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bill", "Home", 15.25);
         t.execute();
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         Assert.assertNotNull(e);
 
         UnionAffiliation af = new UnionAffiliation();
         e.setAffiliation(af);
         int memberId = 86; // Maxwell Smart
-        PayrollDatabase.addUnionMember(memberId, e);
+        InMemoryDatabase.addUnionMember(memberId, e);
         ServiceChargeTransaction sct = new ServiceChargeTransaction(memberId, LocalDate.of(2005, 8, 8), 12.95);
         sct.execute();
         ServiceCharge sc = af.getServiceCharge(LocalDate.of(2005, 8, 8));
@@ -127,7 +127,7 @@ public class PayrollTest {
 
         ChangeNameTransaction cnt = new ChangeNameTransaction(empId, "Bob");
         cnt.execute();
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         Assert.assertNotNull(e);
         Assert.assertEquals("Bob", e.name());
     }
@@ -140,7 +140,7 @@ public class PayrollTest {
 
         ChangeHourlyTransaction cht = new ChangeHourlyTransaction(empId, 27.52);
         cht.execute();
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         Assert.assertNotNull(e);
         PaymentClassification pc = e.classification();
         Assert.assertNotNull(pc);
@@ -158,7 +158,7 @@ public class PayrollTest {
         t.execute();
         ChangeSalariedTransaction cst = new ChangeSalariedTransaction(empId, 3000.00);
         cst.execute();
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         Assert.assertNotNull(e);
         PaymentClassification pc = e.classification();
         Assert.assertNotNull(pc);
@@ -176,7 +176,7 @@ public class PayrollTest {
         t.execute();
         ChangeCommissionedTransaction cht = new ChangeCommissionedTransaction(empId, 1250.00, 5.6);
         cht.execute();
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         Assert.assertNotNull(e);
         PaymentClassification pc = e.classification();
         Assert.assertNotNull(pc);
@@ -195,7 +195,7 @@ public class PayrollTest {
         t.execute();
         ChangeDirectTransaction cddt = new ChangeDirectTransaction(empId);
         cddt.execute();
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         Assert.assertNotNull(e);
         PaymentMethod method = e.method();
         Assert.assertNotNull(method);
@@ -210,7 +210,7 @@ public class PayrollTest {
         new ChangeDirectTransaction(empId).execute();
         ChangeHoldTransaction cht = new ChangeHoldTransaction(empId);
         cht.execute();
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         Assert.assertNotNull(e);
         PaymentMethod method = e.method();
         Assert.assertNotNull(method);
@@ -224,7 +224,7 @@ public class PayrollTest {
         t.execute();
         ChangeMailTransaction cmt = new ChangeMailTransaction(empId);
         cmt.execute();
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         Assert.assertNotNull(e);
         PaymentMethod method = e.method();
         Assert.assertNotNull(method);
@@ -239,14 +239,14 @@ public class PayrollTest {
         int memberId = 7743;
         ChangeMemberTransaction cmt = new ChangeMemberTransaction(empId, memberId, 99.42);
         cmt.execute();
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         Assert.assertNotNull(e);
         Affiliation affiliation = e.affiliation();
         Assert.assertNotNull(affiliation);
         Assert.assertTrue(affiliation instanceof UnionAffiliation);
         UnionAffiliation uf = (UnionAffiliation)affiliation;
         Assert.assertEquals(99.42, uf.dues(), .001);
-        Employee member =PayrollDatabase.getUnionMember(memberId);
+        Employee member = InMemoryDatabase.getUnionMember(memberId);
         Assert.assertNotNull(member);
         Assert.assertEquals(e, member);
     }
@@ -261,12 +261,12 @@ public class PayrollTest {
         new ChangeMemberTransaction(empId, memberId, 99.42).execute();
         ChangeUnaffiliatedTransaction cut = new ChangeUnaffiliatedTransaction(empId);
         cut.execute();
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         Assert.assertNotNull(e);
         Affiliation affiliation = e.affiliation();
         Assert.assertNotNull(affiliation);
         Assert.assertTrue(affiliation instanceof NoAffiliation);
-        Employee member = PayrollDatabase.getUnionMember(memberId);
+        Employee member = InMemoryDatabase.getUnionMember(memberId);
         Assert.assertNull(member);
     }
 

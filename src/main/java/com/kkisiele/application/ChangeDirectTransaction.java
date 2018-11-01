@@ -1,15 +1,21 @@
 package com.kkisiele.application;
 
 import com.kkisiele.domain.DirectDepositMethod;
-import com.kkisiele.domain.PaymentMethod;
+import com.kkisiele.domain.Employee;
+import com.kkisiele.infrastructure.InMemoryDatabase;
 
-public class ChangeDirectTransaction extends ChangeMethodTransaction {
+public class ChangeDirectTransaction implements Transaction {
+    private final int empId;
+
     public ChangeDirectTransaction(int empId) {
-        super(empId);
+        this.empId = empId;
     }
 
     @Override
-    protected PaymentMethod getMethod() {
-        return new DirectDepositMethod("mBank", "123");
+    public void execute() {
+        Employee e = InMemoryDatabase.getEmployee(empId);
+        if(e != null) {
+            e.setMethod(new DirectDepositMethod("mBank", "123"));
+        }
     }
 }

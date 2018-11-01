@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class PayrollDatabase {
+public class InMemoryDatabase {
     private static final Map<Integer, Employee> employees = new HashMap<>();
     private static final Map<Integer, Employee> unionMembers = new HashMap<>();
 

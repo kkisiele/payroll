@@ -26,7 +26,7 @@ public class CommissionClassification implements PaymentClassification {
     public double calculatePay(Paycheck paycheck) {
         double salesTotal = 0.0;
         for(SalesReceipt receipt : salesReceipts.values()) {
-            if(DateUtil.isInPayPeriod(receipt.date(), paycheck.payStartDate(), paycheck.payDate())) {
+            if(paycheck.isInPayPeriod(receipt.date())) {
                 salesTotal += receipt.saleAmount();
             }
         }

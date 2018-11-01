@@ -1,25 +1,23 @@
 package com.kkisiele.application;
 
-import com.kkisiele.domain.MonthlySchedule;
-import com.kkisiele.domain.PaymentClassification;
-import com.kkisiele.domain.PaymentSchedule;
-import com.kkisiele.domain.SalariedClassification;
+import com.kkisiele.domain.*;
+import com.kkisiele.infrastructure.InMemoryDatabase;
 
-public class ChangeSalariedTransaction extends ChangeClassificationTransaction {
+public class ChangeSalariedTransaction implements Transaction {
+    private final int empId;
     private final double salary;
 
     public ChangeSalariedTransaction(int empId, double salary) {
-        super(empId);
+        this.empId = empId;
         this.salary = salary;
     }
-
     @Override
-    protected PaymentClassification getClassification() {
-        return new SalariedClassification(salary);
+    public void execute() {
+        Employee employee = InMemoryDatabase.getEmployee(empId);
+        if(employee != null) {
+            employee.setClassification(new SalariedClassification(salary));
+            employee.setSchedule(new MonthlySchedule());
+        }
     }
 
-    @Override
-    protected PaymentSchedule getSchedule() {
-        return new MonthlySchedule();
-    }
 }

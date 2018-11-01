@@ -56,4 +56,8 @@ public class Paycheck {
     public void setField(String fieldName, String value) {
         fields.put(fieldName, value);
     }
+
+    public boolean isInPayPeriod(LocalDate date) {
+        return (date.compareTo(payStartDate) >= 0) && (date.compareTo(payDate) <= 0);
+    }
 }

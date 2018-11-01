@@ -1,15 +1,21 @@
 package com.kkisiele.application;
 
+import com.kkisiele.domain.Employee;
 import com.kkisiele.domain.MailMethod;
-import com.kkisiele.domain.PaymentMethod;
+import com.kkisiele.infrastructure.InMemoryDatabase;
 
-public class ChangeMailTransaction extends ChangeMethodTransaction {
+public class ChangeMailTransaction implements Transaction {
+    private final int empId;
+
     public ChangeMailTransaction(int empId) {
-        super(empId);
+        this.empId = empId;
     }
 
     @Override
-    protected PaymentMethod getMethod() {
-        return new MailMethod("1 Infinite Loop");
+    public void execute() {
+        Employee e = InMemoryDatabase.getEmployee(empId);
+        if(e != null) {
+            e.setMethod(new MailMethod("1 Infinite Loop"));
+        }
     }
 }

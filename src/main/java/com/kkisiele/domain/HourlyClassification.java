@@ -28,17 +28,11 @@ public class HourlyClassification implements PaymentClassification {
     public double calculatePay(Paycheck paycheck) {
         double totalPay = 0.0;
         for(TimeCard timeCard : timeCards.values()) {
-            if(DateUtil.isInPayPeriod(timeCard.date(), paycheck.payStartDate(), paycheck.payDate())) {
+            if(paycheck.isInPayPeriod(timeCard.date())) {
                 totalPay += calculatePayForTimeCard(timeCard);
             }
         }
         return totalPay;
-    }
-
-    private boolean isInPayPeriod(TimeCard timeCard, LocalDate payDate) {
-        LocalDate endDate = payDate;
-        LocalDate startDate = payDate.minusDays(5);
-        return timeCard.date().compareTo(endDate) <= 0 && timeCard.date().compareTo(startDate) >= 0;
     }
 
     private double calculatePayForTimeCard(TimeCard timeCard) {

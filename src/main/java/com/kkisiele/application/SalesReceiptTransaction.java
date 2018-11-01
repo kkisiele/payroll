@@ -3,7 +3,7 @@ package com.kkisiele.application;
 import com.kkisiele.domain.CommissionClassification;
 import com.kkisiele.domain.Employee;
 import com.kkisiele.domain.SalesReceipt;
-import com.kkisiele.infrastructure.PayrollDatabase;
+import com.kkisiele.infrastructure.InMemoryDatabase;
 
 import java.time.LocalDate;
 
@@ -20,7 +20,7 @@ public class SalesReceiptTransaction implements Transaction {
 
     @Override
     public void execute() {
-        Employee e = PayrollDatabase.getEmployee(empId);
+        Employee e = InMemoryDatabase.getEmployee(empId);
         if(e != null) {
              if(e.classification() instanceof CommissionClassification) {
                  CommissionClassification cc = (CommissionClassification) e.classification();

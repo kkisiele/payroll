@@ -42,7 +42,7 @@ public class UnionAffiliation implements Affiliation {
         totalDues = dues * fridays;
 
         for(ServiceCharge charge : charges.values()) {
-            if(DateUtil.isInPayPeriod(charge.date(), paycheck.payStartDate(), paycheck.payDate())) {
+            if(paycheck.isInPayPeriod(charge.date())) {
                 totalDues += charge.amount();
             }
         }

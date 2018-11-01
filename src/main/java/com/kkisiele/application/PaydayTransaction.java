@@ -2,7 +2,7 @@ package com.kkisiele.application;
 
 import com.kkisiele.domain.Employee;
 import com.kkisiele.domain.Paycheck;
-import com.kkisiele.infrastructure.PayrollDatabase;
+import com.kkisiele.infrastructure.InMemoryDatabase;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -18,8 +18,8 @@ public class PaydayTransaction implements Transaction {
 
     @Override
     public void execute() {
-        for(Integer empId : PayrollDatabase.getAllEmployeeIds()) {
-            Employee employee = PayrollDatabase.getEmployee(empId);
+        for(Integer empId : InMemoryDatabase.getAllEmployeeIds()) {
+            Employee employee = InMemoryDatabase.getEmployee(empId);
             if(employee.isPayDate(payDate)) {
                 LocalDate startDate = employee.getPayPeriodStartDate(payDate);
                 Paycheck pc = new Paycheck(startDate, payDate);

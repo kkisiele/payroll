@@ -1,25 +1,26 @@
 package com.kkisiele.application;
 
-import com.kkisiele.domain.MonthlySchedule;
-import com.kkisiele.domain.PaymentClassification;
-import com.kkisiele.domain.PaymentSchedule;
-import com.kkisiele.domain.SalariedClassification;
+import com.kkisiele.domain.Employee;
+import com.kkisiele.domain.EmployeeFactory;
+import com.kkisiele.infrastructure.InMemoryDatabase;
 
-public class AddSalariedEmployee extends AddEmployeeTransaction {
+public class AddSalariedEmployee implements Transaction {
+    private final int empId;
+    private final String name;
+    private final String address;
     private final double salary;
 
     public AddSalariedEmployee(int empId, String name, String address, double salary) {
-        super(empId, name, address);
+        this.empId = empId;
+        this.name = name;
+        this.address = address;
         this.salary = salary;
     }
 
     @Override
-    protected PaymentClassification makeClassification() {
-        return new SalariedClassification(salary);
-    }
-
-    @Override
-    protected PaymentSchedule makeSchedule() {
-        return new MonthlySchedule();
+    public void execute() {
+        EmployeeFactory factory = new EmployeeFactory();
+        Employee employee = factory.createSalariedEmployee(empId, name, address, salary);
+        InMemoryDatabase.addEmployee(empId, employee);
     }
 }
