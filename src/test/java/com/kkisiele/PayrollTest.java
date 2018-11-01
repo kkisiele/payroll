@@ -1,21 +1,24 @@
 package com.kkisiele;
 
+import com.kkisiele.application.*;
 import com.kkisiele.domain.*;
 import com.kkisiele.infrastructure.InMemoryDatabase;
 import org.junit.Assert;
 import org.junit.Test;
-import com.kkisiele.application.*;
 
 import java.time.LocalDate;
+import java.util.Map;
 
 public class PayrollTest {
+    private final PayrollDatabase database = new InMemoryDatabase();
+    private final PayrollFacade facade = new PayrollFacade(database);
+
     @Test
     public void addSalariedEmployee() {
         int empId = 1;
-        AddSalariedEmployee t = new AddSalariedEmployee(empId, "Bob", "Home", 1000.00);
-        t.execute();
+        facade.addSalariedEmployee(empId, "Bob", "Home", 1000.00);
 
-        Employee e = InMemoryDatabase.getEmployee(empId);
+        Employee e = database.getEmployee(empId);
         Assert.assertEquals("Bob", e.name());
 
         PaymentClassification pc = e.classification();
@@ -31,10 +34,9 @@ public class PayrollTest {
     @Test
     public void addHourlyEmployee() {
         int empId = 1;
-        AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bob", "Home", 10.00);
-        t.execute();
+        facade.addHourlyEmployee(empId, "Bob", "Home", 10.00);
 
-        Employee e = InMemoryDatabase.getEmployee(empId);
+        Employee e = database.getEmployee(empId);
         Assert.assertEquals("Bob", e.name());
 
         PaymentClassification pc = e.classification();
@@ -50,10 +52,9 @@ public class PayrollTest {
     @Test
     public void addCommissionedEmployee() {
         int empId = 1;
-        AddCommissionedEmployee t = new AddCommissionedEmployee(empId, "Bob", "Home", 1200, 20);
-        t.execute();
+        facade.addCommissionedEmployee(empId, "Bob", "Home", 1200, 20);
 
-        Employee e = InMemoryDatabase.getEmployee(empId);
+        Employee e = database.getEmployee(empId);
         Assert.assertEquals("Bob", e.name());
 
         PaymentClassification pc = e.classification();
@@ -70,26 +71,21 @@ public class PayrollTest {
     @Test
     public void deleteEmployee() {
         int empId = 4;
-        AddCommissionedEmployee t = new AddCommissionedEmployee(empId, "Bill", "Home", 2500, 3);
-        t.execute();
+        facade.addCommissionedEmployee(empId, "Bill", "Home", 2500, 3);
 
-        Employee e = InMemoryDatabase.getEmployee(empId);
+        Employee e = database.getEmployee(empId);
         Assert.assertNotNull(e);
-        DeleteEmployeeTransaction dt = new DeleteEmployeeTransaction(empId);
-        dt.execute();
-        e = InMemoryDatabase.getEmployee(empId);
+        facade.deleteEmployee(empId);
+        e = database.getEmployee(empId);
         Assert.assertNull(e);
     }
 
     @Test
     public void timeCardTransaction() {
         int empId = 5;
-        AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bill", "Home", 15.25);
-        t.execute();
-        TimeCardTransaction tct = new TimeCardTransaction(LocalDate.of(2005, 7, 31), 8.0, empId);
-        tct.execute();
-
-        Employee e = InMemoryDatabase.getEmployee(empId);
+        facade.addHourlyEmployee(empId, "Bill", "Home", 15.25);
+        facade.registerTime(LocalDate.of(2005, 7, 31), 8.0, empId);
+        Employee e = database.getEmployee(empId);
         Assert.assertNotNull(e);
 
         PaymentClassification pc = e.classification();
@@ -103,17 +99,15 @@ public class PayrollTest {
     @Test
     public void addServiceCharge() {
         int empId = 2;
-        AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bill", "Home", 15.25);
-        t.execute();
-        Employee e = InMemoryDatabase.getEmployee(empId);
+        facade.addHourlyEmployee(empId, "Bill", "Home", 15.25);
+        Employee e = database.getEmployee(empId);
         Assert.assertNotNull(e);
 
         UnionAffiliation af = new UnionAffiliation();
         e.setAffiliation(af);
         int memberId = 86; // Maxwell Smart
-        InMemoryDatabase.addUnionMember(memberId, e);
-        ServiceChargeTransaction sct = new ServiceChargeTransaction(memberId, LocalDate.of(2005, 8, 8), 12.95);
-        sct.execute();
+        database.addUnionMember(memberId, e);
+        facade.registerCharge(memberId, LocalDate.of(2005, 8, 8), 12.95);
         ServiceCharge sc = af.getServiceCharge(LocalDate.of(2005, 8, 8));
         Assert.assertNotNull(sc);
         Assert.assertEquals(12.95, sc.amount(), 0.001);
@@ -122,12 +116,9 @@ public class PayrollTest {
     @Test
     public void changeNameTransaction() {
         int empId = 2;
-        AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bill", "Home", 15.25);
-        t.execute();
-
-        ChangeNameTransaction cnt = new ChangeNameTransaction(empId, "Bob");
-        cnt.execute();
-        Employee e = InMemoryDatabase.getEmployee(empId);
+        facade.addHourlyEmployee(empId, "Bill", "Home", 15.25);
+        facade.changeName(empId, "Bob");
+        Employee e = database.getEmployee(empId);
         Assert.assertNotNull(e);
         Assert.assertEquals("Bob", e.name());
     }
@@ -135,12 +126,10 @@ public class PayrollTest {
     @Test
     public void changeHourlyTransaction() {
         int empId = 3;
-        AddCommissionedEmployee t = new AddCommissionedEmployee(empId, "Lance", "Home", 2500, 3.2);
-        t.execute();
+        facade.addCommissionedEmployee(empId, "Lance", "Home", 2500, 3.2);
 
-        ChangeHourlyTransaction cht = new ChangeHourlyTransaction(empId, 27.52);
-        cht.execute();
-        Employee e = InMemoryDatabase.getEmployee(empId);
+        facade.changeToHourlyEmployee(empId, 27.52);
+        Employee e = database.getEmployee(empId);
         Assert.assertNotNull(e);
         PaymentClassification pc = e.classification();
         Assert.assertNotNull(pc);
@@ -154,11 +143,9 @@ public class PayrollTest {
     @Test
     public void changeSalaryTransaction() {
         int empId = 4;
-        AddCommissionedEmployee t = new AddCommissionedEmployee(empId, "Lance", "Home", 2500, 3.2);
-        t.execute();
-        ChangeSalariedTransaction cst = new ChangeSalariedTransaction(empId, 3000.00);
-        cst.execute();
-        Employee e = InMemoryDatabase.getEmployee(empId);
+        facade.addCommissionedEmployee(empId, "Lance", "Home", 2500, 3.2);
+        facade.changeToSalariedEmployee(empId, 3000.00);
+        Employee e = database.getEmployee(empId);
         Assert.assertNotNull(e);
         PaymentClassification pc = e.classification();
         Assert.assertNotNull(pc);
@@ -172,11 +159,9 @@ public class PayrollTest {
     @Test
     public void changeCommissionTransaction() {
         int empId = 5;
-        AddSalariedEmployee t = new AddSalariedEmployee(empId, "Bob", "Home", 2500.00);
-        t.execute();
-        ChangeCommissionedTransaction cht = new ChangeCommissionedTransaction(empId, 1250.00, 5.6);
-        cht.execute();
-        Employee e = InMemoryDatabase.getEmployee(empId);
+        facade.addSalariedEmployee(empId, "Bob", "Home", 2500.00);
+        facade.changeToCommissionedEmployee(empId, 1250.00, 5.6);
+        Employee e = database.getEmployee(empId);
         Assert.assertNotNull(e);
         PaymentClassification pc = e.classification();
         Assert.assertNotNull(pc);
@@ -191,11 +176,9 @@ public class PayrollTest {
     @Test
     public void changeDirectMethod() {
         int empId = 6;
-        AddSalariedEmployee t = new AddSalariedEmployee(empId, "Mike", "Home", 3500.00);
-        t.execute();
-        ChangeDirectTransaction cddt = new ChangeDirectTransaction(empId);
-        cddt.execute();
-        Employee e = InMemoryDatabase.getEmployee(empId);
+        facade.addSalariedEmployee(empId, "Mike", "Home", 3500.00);
+        facade.changeToDepositMethod(empId);
+        Employee e = database.getEmployee(empId);
         Assert.assertNotNull(e);
         PaymentMethod method = e.method();
         Assert.assertNotNull(method);
@@ -205,12 +188,10 @@ public class PayrollTest {
     @Test
     public void changeHoldMethod() {
         int empId = 7;
-        AddSalariedEmployee t = new AddSalariedEmployee(empId, "Mike", "Home", 3500.00);
-        t.execute();
-        new ChangeDirectTransaction(empId).execute();
-        ChangeHoldTransaction cht = new ChangeHoldTransaction(empId);
-        cht.execute();
-        Employee e = InMemoryDatabase.getEmployee(empId);
+        facade.addSalariedEmployee(empId, "Mike", "Home", 3500.00);
+        facade.changeToDepositMethod(empId);
+        facade.changeToHoldMethod(empId);
+        Employee e = database.getEmployee(empId);
         Assert.assertNotNull(e);
         PaymentMethod method = e.method();
         Assert.assertNotNull(method);
@@ -220,11 +201,9 @@ public class PayrollTest {
     @Test
     public void changeMailMethod() {
         int empId = 8;
-        AddSalariedEmployee t = new AddSalariedEmployee(empId, "Mike", "Home", 3500.00);
-        t.execute();
-        ChangeMailTransaction cmt = new ChangeMailTransaction(empId);
-        cmt.execute();
-        Employee e = InMemoryDatabase.getEmployee(empId);
+        facade.addSalariedEmployee(empId, "Mike", "Home", 3500.00);
+        facade.changeToMailMethod(empId);
+        Employee e = database.getEmployee(empId);
         Assert.assertNotNull(e);
         PaymentMethod method = e.method();
         Assert.assertNotNull(method);
@@ -234,19 +213,17 @@ public class PayrollTest {
     @Test
     public void ChangeUnionMember() {
         int empId = 8;
-        AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bill", "Home", 15.25);
-        t.execute();
+        facade.addHourlyEmployee(empId, "Bill", "Home", 15.25);
         int memberId = 7743;
-        ChangeMemberTransaction cmt = new ChangeMemberTransaction(empId, memberId, 99.42);
-        cmt.execute();
-        Employee e = InMemoryDatabase.getEmployee(empId);
+        facade.changeToUnionAffiliation(empId, memberId, 99.42);
+        Employee e = database.getEmployee(empId);
         Assert.assertNotNull(e);
         Affiliation affiliation = e.affiliation();
         Assert.assertNotNull(affiliation);
         Assert.assertTrue(affiliation instanceof UnionAffiliation);
         UnionAffiliation uf = (UnionAffiliation)affiliation;
         Assert.assertEquals(99.42, uf.dues(), .001);
-        Employee member = InMemoryDatabase.getUnionMember(memberId);
+        Employee member = database.getUnionMember(memberId);
         Assert.assertNotNull(member);
         Assert.assertEquals(e, member);
     }
@@ -254,32 +231,28 @@ public class PayrollTest {
     @Test
     public void ChangeUnaffiliatedMember() {
         int empId = 10;
-        AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bill", "Home", 15.25);
-        t.execute();
+        facade.addHourlyEmployee(empId, "Bill", "Home", 15.25);
 
         int memberId = 7743;
-        new ChangeMemberTransaction(empId, memberId, 99.42).execute();
-        ChangeUnaffiliatedTransaction cut = new ChangeUnaffiliatedTransaction(empId);
-        cut.execute();
-        Employee e = InMemoryDatabase.getEmployee(empId);
+        facade.changeToUnionAffiliation(empId, memberId, 99.42);
+        facade.changeToUnaffiliated(empId);
+        Employee e = database.getEmployee(empId);
         Assert.assertNotNull(e);
         Affiliation affiliation = e.affiliation();
         Assert.assertNotNull(affiliation);
         Assert.assertTrue(affiliation instanceof NoAffiliation);
-        Employee member = InMemoryDatabase.getUnionMember(memberId);
+        Employee member = database.getUnionMember(memberId);
         Assert.assertNull(member);
     }
 
     @Test
     public void paySingleSalariedEmployee() {
         int empId = 1;
-        AddSalariedEmployee t = new AddSalariedEmployee(empId, "Bob", "Home", 1000.00);
-        t.execute();
+        facade.addSalariedEmployee(empId, "Bob", "Home", 1000.00);
 
         LocalDate payDate = LocalDate.of(2001, 11, 30);
-        PaydayTransaction pt = new PaydayTransaction(payDate);
-        pt.execute();
-        Paycheck pc = pt.getPaycheck(empId);
+        Map<Integer, Paycheck> paychecks = facade.payday(payDate);
+        Paycheck pc = paychecks.get(empId);
         Assert.assertNotNull(pc);
         Assert.assertEquals(payDate, pc.payDate());
         Assert.assertEquals(1000.00, pc.grossPay(), .001);
@@ -291,17 +264,14 @@ public class PayrollTest {
     @Test
     public void payingSingleHourlyEmployeeNoTimeCards() {
         int empId = 2;
-        AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bill", "Home", 15.25);
-        t.execute();
+        facade.addHourlyEmployee(empId, "Bill", "Home", 15.25);
 
         LocalDate payDate = LocalDate.of(2001, 11, 9);
-        PaydayTransaction pt = new PaydayTransaction(payDate);
-        pt.execute();
-        validatePaycheck(pt, empId, payDate, 0.0);
+        Map<Integer, Paycheck> paychecks = facade.payday(payDate);
+        validatePaycheck(paychecks.get(empId), payDate, 0.0);
     }
 
-    private void validatePaycheck(PaydayTransaction pt, int empid, LocalDate payDate, double pay) {
-        Paycheck pc = pt.getPaycheck(empid);
+    private void validatePaycheck(Paycheck pc, LocalDate payDate, double pay) {
         Assert.assertNotNull(pc);
         Assert.assertEquals(payDate, pc.payDate());
         Assert.assertEquals(pay, pc.grossPay(), .001);
@@ -313,167 +283,129 @@ public class PayrollTest {
     @Test
     public void paySingleHourlyEmployeeOneTimeCard() {
         int empId = 2;
-        AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bill", "Home", 15.25);
-        t.execute();
+        facade.addHourlyEmployee(empId, "Bill", "Home", 15.25);
 
         LocalDate payDate = LocalDate.of(2001, 11, 9); // Friday
-        TimeCardTransaction tc = new TimeCardTransaction(payDate, 2.0, empId);
-        tc.execute();
-        PaydayTransaction pt = new PaydayTransaction(payDate);
-        pt.execute();
-        validatePaycheck(pt, empId, payDate, 30.5);
+        facade.registerTime(payDate, 2.0, empId);
+        Map<Integer, Paycheck> paychecks = facade.payday(payDate);
+        validatePaycheck(paychecks.get(empId), payDate, 30.5);
     }
 
     @Test
     public void paySingleHourlyEmployeeOvertimeOneTimeCard() {
         int empId = 2;
-        AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bill", "Home", 15.25);
-        t.execute();
+        facade.addHourlyEmployee(empId, "Bill", "Home", 15.25);
 
         LocalDate payDate = LocalDate.of(2001, 11, 9); // Friday
-        TimeCardTransaction tc = new TimeCardTransaction(payDate, 9.0, empId);
-        tc.execute();
+        facade.registerTime(payDate, 9.0, empId);
 
-        PaydayTransaction pt = new PaydayTransaction(payDate);
-        pt.execute();
-
-        validatePaycheck(pt, empId, payDate, (8 + 1.5)*15.25);
+        Map<Integer, Paycheck> paychecks = facade.payday(payDate);
+        validatePaycheck(paychecks.get(empId), payDate, (8 + 1.5)*15.25);
     }
 
     @Test
     public void paySingleHourlyEmployeeOnWrongDate() {
         int empId = 2;
-        AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bill", "Home", 15.25);
-        t.execute();
+        facade.addHourlyEmployee(empId, "Bill", "Home", 15.25);
 
         LocalDate payDate = LocalDate.of(2001, 11, 8); // Thursday
-        TimeCardTransaction tc = new TimeCardTransaction(payDate, 9.0, empId);
-        tc.execute();
-        PaydayTransaction pt = new PaydayTransaction(payDate);
-        pt.execute();
-        Paycheck pc = pt.getPaycheck(empId);
+        facade.registerTime(payDate, 9.0, empId);
+        Map<Integer, Paycheck> paychecks = facade.payday(payDate);
+        Paycheck pc = paychecks.get(empId);
         Assert.assertNull(pc);
     }
 
     @Test
     public void paySingleHourlyEmployeeTwoTimeCards() {
         int empId = 2;
-        AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bill", "Home", 15.25);
-        t.execute();
+        facade.addHourlyEmployee(empId, "Bill", "Home", 15.25);
 
         LocalDate payDate = LocalDate.of(2001, 11, 9); // Friday
-        TimeCardTransaction tc = new TimeCardTransaction(payDate, 2.0, empId);
-        tc.execute();
-        TimeCardTransaction tc2 = new TimeCardTransaction(payDate.minusDays(1), 5.0,empId);
-        tc2.execute();
-        PaydayTransaction pt = new PaydayTransaction(payDate);
-        pt.execute();
-        validatePaycheck(pt, empId, payDate, 7*15.25);
+        facade.registerTime(payDate, 2.0, empId);
+        facade.registerTime(payDate.minusDays(1), 5.0,empId);
+        Map<Integer, Paycheck> paychecks = facade.payday(payDate);
+        validatePaycheck(paychecks.get(empId), payDate, 7*15.25);
     }
 
     @Test
     public void paySingleHourlyEmployeeWithTimeCardsSpanningTwoPayPeriods() {
         int empId = 2;
-        AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bill", "Home", 15.25);
-        t.execute();
+        facade.addHourlyEmployee(empId, "Bill", "Home", 15.25);
 
         LocalDate payDate = LocalDate.of(2001, 11, 9); // Friday
         LocalDate dateInPreviousPayPeriod = LocalDate.of(2001, 11, 2);
-        TimeCardTransaction tc = new TimeCardTransaction(payDate, 2.0, empId);
-        tc.execute();
-        TimeCardTransaction tc2 = new TimeCardTransaction(dateInPreviousPayPeriod, 5.0, empId);
-        tc2.execute();
-        PaydayTransaction pt = new PaydayTransaction(payDate);
-        pt.execute();
-        validatePaycheck(pt, empId, payDate, 2*15.25);
+        facade.registerTime(payDate, 2.0, empId);
+        facade.registerTime(dateInPreviousPayPeriod, 5.0, empId);
+        Map<Integer, Paycheck> paychecks = facade.payday(payDate);
+        validatePaycheck(paychecks.get(empId), payDate, 2*15.25);
     }
 
     @Test
     public void payingSingleCommissionedEmployeeNoReceipts() {
         int empId = 2;
-        AddCommissionedEmployee t = new AddCommissionedEmployee(empId, "Bill", "Home", 1500, 10);
-        t.execute();
+        facade.addCommissionedEmployee(empId, "Bill", "Home", 1500, 10);
 
         LocalDate payDate = LocalDate.of(2001, 11, 16); // Payday
-        PaydayTransaction pt = new PaydayTransaction(payDate);
-        pt.execute();
-        validatePaycheck(pt, empId, payDate, 1500.0);
+        Map<Integer, Paycheck> paychecks = facade.payday(payDate);
+        validatePaycheck(paychecks.get(empId), payDate, 1500.0);
     }
 
     @Test
     public void paySingleCommissionedEmployeeOneReceipt() {
         int empId = 2;
-        AddCommissionedEmployee t = new AddCommissionedEmployee(empId, "Bill", "Home", 1500, 10);
-        t.execute();
+        facade.addCommissionedEmployee(empId, "Bill", "Home", 1500, 10);
         LocalDate payDate = LocalDate.of(2001, 11, 16); // Payday
 
-        SalesReceiptTransaction sr = new SalesReceiptTransaction(payDate, 5000.00, empId);
-        sr.execute();
-        PaydayTransaction pt = new PaydayTransaction(payDate);
-        pt.execute();
-        validatePaycheck(pt, empId, payDate, 2000.00);
+        facade.registerSale(payDate, 5000.00, empId);
+        Map<Integer, Paycheck> paychecks = facade.payday(payDate);
+        validatePaycheck(paychecks.get(empId), payDate, 2000.00);
     }
 
     @Test
     public void paySingleCommissionedEmployeeOnWrongDate() {
         int empId = 2;
-        AddCommissionedEmployee t = new AddCommissionedEmployee(empId, "Bill", "Home", 1500, 10);
-        t.execute();
+        facade.addCommissionedEmployee(empId, "Bill", "Home", 1500, 10);
         LocalDate payDate = LocalDate.of(2001, 11, 9); // wrong friday
 
-        SalesReceiptTransaction sr = new SalesReceiptTransaction(payDate, 5000.00, empId);
-        sr.execute();
-        PaydayTransaction pt = new PaydayTransaction(payDate);
-        pt.execute();
-
-        Paycheck pc = pt.getPaycheck(empId);
+        facade.registerSale(payDate, 5000.00, empId);
+        Map<Integer, Paycheck> paychecks = facade.payday(payDate);
+        Paycheck pc = paychecks.get(empId);
         Assert.assertNotNull(pc);
     }
 
     @Test
     public void paySingleCommissionedEmployeeTwoReceipts() {
         int empId = 2;
-        AddCommissionedEmployee t = new AddCommissionedEmployee(empId, "Bill", "Home", 1500, 10);
-        t.execute();
+        facade.addCommissionedEmployee(empId, "Bill", "Home", 1500, 10);
         LocalDate payDate = LocalDate.of(2001, 11, 16); // Payday
 
-        SalesReceiptTransaction sr = new SalesReceiptTransaction(payDate, 5000.00, empId);
-        sr.execute();
-        SalesReceiptTransaction sr2 = new SalesReceiptTransaction(payDate.minusDays(1), 3500.00, empId);
-        sr2.execute();
-        PaydayTransaction pt = new PaydayTransaction(payDate);
-        pt.execute();
-        validatePaycheck(pt, empId, payDate, 2350.00);
+        facade.registerSale(payDate, 5000.00, empId);
+        facade.registerSale(payDate.minusDays(1), 3500.00, empId);
+        Map<Integer, Paycheck> paychecks = facade.payday(payDate);
+        validatePaycheck(paychecks.get(empId), payDate, 2350.00);
     }
 
     @Test
     public void testPaySingleCommissionedEmployeeWithReceiptsSpanningTwoPayPeriods() {
         int empId = 2;
-        AddCommissionedEmployee t = new AddCommissionedEmployee(empId, "Bill", "Home", 1500, 10);
-        t.execute();
+        facade.addCommissionedEmployee(empId, "Bill", "Home", 1500, 10);
         LocalDate payDate = LocalDate.of(2001, 11, 16); // Payday
 
-        SalesReceiptTransaction sr = new SalesReceiptTransaction(payDate, 5000.00, empId);
-        sr.execute();
-        SalesReceiptTransaction sr2 = new SalesReceiptTransaction(payDate.minusDays(15), 3500.00, empId);
-        sr2.execute();
-        PaydayTransaction pt = new PaydayTransaction(payDate);
-        pt.execute();
-        validatePaycheck(pt, empId, payDate, 2000.00);
+        facade.registerSale(payDate, 5000.00, empId);
+        facade.registerSale(payDate.minusDays(15), 3500.00, empId);
+        Map<Integer, Paycheck> paychecks = facade.payday(payDate);
+        validatePaycheck(paychecks.get(empId), payDate, 2000.00);
     }
 
     @Test
     public void salariedUnionMemberDues() {
         int empId = 1;
-        AddSalariedEmployee t = new AddSalariedEmployee(empId, "Bob", "Home", 1000.00);
-        t.execute();
+        facade.addSalariedEmployee(empId, "Bob", "Home", 1000.00);
         int memberId = 7734;
-        ChangeMemberTransaction cmt = new ChangeMemberTransaction(empId, memberId, 9.42);
-        cmt.execute();
+        facade.changeToUnionAffiliation(empId, memberId, 9.42);
         LocalDate payDate = LocalDate.of(2001, 11, 30);
-        PaydayTransaction pt = new PaydayTransaction(payDate);
-        pt.execute();
-        Paycheck pc = pt.getPaycheck(empId);
+        Map<Integer, Paycheck> paychecks = facade.payday(payDate);
+        Paycheck pc = paychecks.get(empId);
         Assert.assertNotNull(pc);
         Assert.assertEquals(payDate, pc.payDate());
         Assert.assertEquals(1000.0, pc.grossPay(), .001);
@@ -485,19 +417,14 @@ public class PayrollTest {
     @Test
     public void hourlyUnionMemberServiceCharge() {
         int empId = 1;
-        AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bill", "Home", 15.24);
-        t.execute();
+        facade.addHourlyEmployee(empId, "Bill", "Home", 15.24);
         int memberId = 7734;
-        ChangeMemberTransaction cmt = new ChangeMemberTransaction(empId, memberId, 9.42);
-        cmt.execute();
+        facade.changeToUnionAffiliation(empId, memberId, 9.42);
         LocalDate payDate = LocalDate.of(2001, 11, 9);
-        ServiceChargeTransaction sct = new ServiceChargeTransaction(memberId, payDate, 19.42);
-        sct.execute();
-        TimeCardTransaction tct = new TimeCardTransaction(payDate, 8.0, empId);
-        tct.execute();
-        PaydayTransaction pt = new PaydayTransaction(payDate);
-        pt.execute();
-        Paycheck pc = pt.getPaycheck(empId);
+        facade.registerCharge(memberId, payDate, 19.42);
+        facade.registerTime(payDate, 8.0, empId);
+        Map<Integer, Paycheck> paychecks = facade.payday(payDate);
+        Paycheck pc = paychecks.get(empId);
         Assert.assertNotNull(pc);
         Assert.assertEquals(payDate, pc.payDate());
         Assert.assertEquals(8*15.24, pc.grossPay(), .001);
@@ -509,25 +436,18 @@ public class PayrollTest {
     @Test
     public void ServiceChargesSpanningMultiplePayPeriods() {
         int empId = 1;
-        AddHourlyEmployee t = new AddHourlyEmployee(empId, "Bill", "Home", 15.24);
-        t.execute();
+        facade.addHourlyEmployee(empId, "Bill", "Home", 15.24);
         int memberId = 7734;
-        ChangeMemberTransaction cmt = new ChangeMemberTransaction(empId, memberId, 9.42);
-        cmt.execute();
+        facade.changeToUnionAffiliation(empId, memberId, 9.42);
         LocalDate payDate = LocalDate.of(2001, 11, 9);
         LocalDate earlyDate = LocalDate.of(2001, 11, 2); // previous Friday
         LocalDate lateDate = LocalDate.of(2001, 11, 16); // next Friday
-        ServiceChargeTransaction sct = new ServiceChargeTransaction(memberId, payDate, 19.42);
-        sct.execute();
-        ServiceChargeTransaction sctEarly = new ServiceChargeTransaction(memberId,earlyDate,100.00);
-        sctEarly.execute();
-        ServiceChargeTransaction sctLate = new ServiceChargeTransaction(memberId,lateDate,200.00);
-        sctLate.execute();
-        TimeCardTransaction tct = new TimeCardTransaction(payDate, 8.0, empId);
-        tct.execute();
-        PaydayTransaction pt = new PaydayTransaction(payDate);
-        pt.execute();
-        Paycheck pc = pt.getPaycheck(empId);
+        facade.registerCharge(memberId, payDate, 19.42);
+        facade.registerCharge(memberId,earlyDate,100.00);
+        facade.registerCharge(memberId,lateDate,200.00);
+        facade.registerTime(payDate, 8.0, empId);
+        Map<Integer, Paycheck> paychecks = facade.payday(payDate);
+        Paycheck pc = paychecks.get(empId);
         Assert.assertNotNull(pc);
         Assert.assertEquals(payDate, pc.payDate());
         Assert.assertEquals(8*15.24, pc.grossPay(), .001);
