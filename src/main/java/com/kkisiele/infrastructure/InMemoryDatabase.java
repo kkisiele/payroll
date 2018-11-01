@@ -15,7 +15,11 @@ public class InMemoryDatabase {
     }
 
     public static Employee getEmployee(int id) {
-        return employees.get(id);
+        Employee employee = employees.get(id);
+//        if(employee == null) {
+//            throw new RuntimeException("No such employee");
+//        }
+        return employee;
     }
 
     public static Set<Integer> getAllEmployeeIds() {
@@ -31,7 +35,11 @@ public class InMemoryDatabase {
     }
 
     public static Employee getUnionMember(int memberId) {
-        return unionMembers.get(memberId);
+        Employee employee = unionMembers.get(memberId);
+//        if(employee == null) {
+//            throw new RuntimeException("No such union member");
+//        }
+        return  employee;
     }
 
     public static void removeUnionMember(int memberId) {

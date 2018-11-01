@@ -1,7 +1,6 @@
 package com.kkisiele.application;
 
 import com.kkisiele.domain.Employee;
-import com.kkisiele.domain.HourlyClassification;
 import com.kkisiele.domain.TimeCard;
 import com.kkisiele.infrastructure.InMemoryDatabase;
 
@@ -21,15 +20,6 @@ public class TimeCardTransaction implements Transaction {
     @Override
     public void execute() {
         Employee employee = InMemoryDatabase.getEmployee(empId);
-        if(employee != null) {
-            if (employee.classification() instanceof HourlyClassification) {
-                HourlyClassification classification = (HourlyClassification) employee.classification();
-                classification.addTimeCard(new TimeCard(date, hours));
-            } else {
-              throw new RuntimeException("Tried to add time card to non-hourly employee");
-            }
-        } else {
-            throw new RuntimeException("No such employee");
-        }
+        employee.addTimeCard(new TimeCard(date, hours));
     }
 }

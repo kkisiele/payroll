@@ -73,4 +73,24 @@ public class Employee {
     public LocalDate getPayPeriodStartDate(LocalDate date) {
         return schedule.getPayPeriodStartDate(date);
     }
+
+    public void addTimeCard(TimeCard timeCard) {
+        if(classification instanceof HourlyClassification) {
+            HourlyClassification hc = (HourlyClassification) classification;
+            hc.addTimeCard(timeCard);
+            return;
+        }
+
+        throw new RuntimeException("Tried to add time card to non-hourly employee");
+    }
+
+    public void addServiceCharge(ServiceCharge charge) {
+        if(affiliation instanceof UnionAffiliation) {
+            UnionAffiliation ua = (UnionAffiliation) affiliation;
+            ua.addServiceCharge(charge);
+            return;
+        }
+
+        throw new RuntimeException("Tries to add service charge to union member without a union affiliation");
+    }
 }
